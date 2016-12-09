@@ -1,0 +1,666 @@
+<!doctype html>
+<html class="no-js" lang="">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!--  Style Imports -->
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/d3_styles.css">
+
+    <!--  HTML Element Styles -->
+    <style>
+        body {
+            position: relative;
+            font-family: "Helvetica Neue", sans-serif;
+            width: auto;
+            margin-bottom: 1em;
+            margin-top: 25px;
+            margin-left: 35px;
+            margin-right: 35px;
+        }
+
+        .label-header{
+            color: blue;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5 {
+            color: hsla(0, 15%, 40%, 1.0);
+            text-transform: uppercase;
+            font-family: "Raleway", Arial, sans-serif;
+            margin-top: 1.5em;
+            margin-bottom: 0em;
+            letter-spacing: 2.5px;
+            font-weight: lighter;
+            word-spacing: 4px;
+        }
+
+        .slider {
+            width: 150px;
+            height: 17px;
+            position: relative;
+            margin-top: 25px;
+            margin-bottom: 6px;
+            background: lightgray;
+
+            -webkit-border-radius: 20px;
+            -moz-border-radius: 20px;
+            border-radius: 20px;
+
+        }
+    </style>
+
+    <!--  JS Imports -->
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="lib/d3.layout.cloud.js"></script>
+    <script src="lib/colorbrewer.js"></script>
+    <script src="js/helperFunctions.js"></script>
+    <script src="js/removeStopWords.js"></script>
+
+</head>
+
+<body class="body">
+
+<div id="heading">
+    <h3>Story Next - Visual Tool for Story Writers</h3>
+</div>
+
+<hr>
+<!-- Option Selection Area -->
+<!-- Left Selection Area -->
+<div style="float: left">
+    <p><label for="spiral_opt" class="label-header">Positioning Spiral:</label>
+        <label for="archimedean"><input type="radio" name="spiral_opt" id="archimedean" value="archimedean" checked="checked"> Archimedean </label>
+        <label for="rectangular"><input type="radio" name="spiral_opt" id="rectangular" value="rectangular" > Rectangular </label></p>
+    <p><label for="font">Font:</label>
+        <select id="font_select" name="fonts">
+            <option value="Impact" selected>Impact</option>
+            <option value="Tahoma">Tahoma</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Comic Sans MS">Comic Sans MS</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Arial">Arial</option>
+            <option value="Times New Roman">Times New Roman</option>
+        </select>
+        <button id="font_reset" name="fonts" type="reset">Reset</button></p>
+</div>
+
+<!-- Middle Selection Area -->
+
+<!-- Right Selection Area -->
+<div style="float: right; text-align: right">
+    <p><label for="options" class="label-header">Customize:</label>
+        <label for="sentiment"><input type="checkbox" name="options" id="sentiment"> Sentiments </label>
+        <label for="key-phrase"><input type="checkbox" name="options" id="key-phrase"> Key Phrases Only </label></p>
+    <p><label for="angle-value" class="label-header">Angle: </label>
+        <input type="number" id="angle-value" value="0" min="-90" max="90">&deg;</p>
+</div>
+
+<!-- D3 Infoviz Area -->
+<hr style="clear: both">
+
+<div id="viz-area">
+<table width="100%">
+    <tr>
+        <td width="70%"><!-- Visualization Area -->
+            <div style="float: left" id="wordcloud"></div>
+        </td>
+        <td width="30%"><!-- Top 10 List Area -->
+            <h5>Top 10 most frequently occurring words</h5>
+            <div style="float: left" id="list-area"></div>
+        </td>
+    </tr>
+</table>
+</div>
+
+<hr style="clear: both">
+
+
+<!-- Slider Area -->
+<div id="silider-area">
+    <b>Percentage of Words Displayed:</b>
+    <input type="range" min=0, max="100", step="2", value="100" id="slider" style="slider"/>
+    <output id="slider">100%</output>
+</div>
+
+
+<hr style="clear: both">
+<!--  Input and user Interaction Area -->
+<form id="form">
+
+    <p style="position: absolute; right: 0; top: 0" id="status"></p>
+
+    <div style="text-align: center">
+        <div id="presets"></div>
+        <div id="custom-area">
+            <p><label for="text">Paste your text below!</label>
+            <p><textarea id="text-input" cols="100" rows="9">Northeastern University (NU, formerly NEU) is a private research university in Boston, Massachusetts, established in 1898. It is categorized as an R1 institution (Doctoral Universities: Highest Research Activity) by the Carnegie Classification of Institutions of Higher Education. The university offers undergraduate and graduate programs on its main campus in the Fenway-Kenmore, Roxbury, South End, and Back Bay neighborhoods of Boston. The university has satellite campus in Charlotte, North Carolina, Seattle, Washington, and Silicon Valley, California that exclusively offer graduate degrees. An additional satellite campus will open in Toronto, Canada in late 2016. The university's enrollment is approximately 18,000 undergraduate students and 7,000 graduate students. Northeastern features a cooperative education program that integrates classroom study with professional experience on seven continents and a comprehensive study abroad program. In 2011, the university opened the George J. Kostas Research Institute for Homeland Security. The Interdisciplinary Science and Engineering Complex will open in early 2017.
+            </textarea>
+            <br><button id="go_button" type="button" class="button go">Go!</button> <button id="reset_button" type="button" class="button reset">Reset to Sample Text</button>
+        </div>
+    </div>
+
+    <hr style="clear: both">
+
+    <p style="float: left">Made by Biswaraj Kar using the D3 example by <a href="http://www.jasondavies.com/" target="_blank">Jason Davies</a>
+    <br>Best viewed at resolutions greater than 1200 x 800 pixels using the latest Google Chrome browser</p>
+    <p style="float: right"><a href="https://www.jasondavies.com/wordcloud/about/" target="_blank">How the Word Cloud Generator Works</a>.
+
+</form>
+
+<!--  Stores Lexicon Data for Sentiment Analysis -->
+<textarea id="pos-words" style="display: none;"></textarea>
+<textarea id="neg-words" style="display: none;"></textarea>
+
+<!--  D3 Code -->
+<script>
+    //HTML ELEMENT DATA
+    var sample_text="Northeastern University (NU, formerly NEU) is a private research university in Boston, Massachusetts, established in 1898. It is categorized as an R1 institution (Doctoral Universities: Highest Research Activity) by the Carnegie Classification of Institutions of Higher Education. The university offers undergraduate and graduate programs on its main campus in the Fenway-Kenmore, Roxbury, South End, and Back Bay neighborhoods of Boston. The university has satellite campus in Charlotte, North Carolina, Seattle, Washington, and Silicon Valley, California that exclusively offer graduate degrees. An additional satellite campus will open in Toronto, Canada in late 2016. The university's enrollment is approximately 18,000 undergraduate students and 7,000 graduate students. Northeastern features a cooperative education program that integrates classroom study with professional experience on seven continents and a comprehensive study abroad program. In 2011, the university opened the George J. Kostas Research Institute for Homeland Security. The Interdisciplinary Science and Engineering Complex will open in early 2017."
+    var cloud_element='wordcloud';
+    var list_element='list-area';
+    var text_area_element='text-input';
+    var font_element='font_select';
+    var slider_element='slider';
+    var sentiment_element='#sentiment';
+    var go_button_element='#go_button';
+    var reset_button_element='#reset_button';
+    var key_phrase_element='#key-phrase';
+    var angle_element='angle-value';
+
+
+    //CLOUD PROPERTIES
+    var list_element_width=document.getElementById(list_element).getBoundingClientRect().width;
+    var list_element_height=document.getElementById(list_element).getBoundingClientRect().height;
+    var viz_element_height=document.getElementById(cloud_element).getBoundingClientRect().height;
+    var viz_element_width=document.getElementById(cloud_element).getBoundingClientRect().width;
+    var cloud_padding=5;
+    var cloud_rotation=10;
+    var viz_height=750;
+    var viz_width=400;
+    var def_cloud_color = d3.scale.category20();    //Default Cloud Color Range (Cat 20)
+    var def_sentiment_col = d3.scale.linear()
+            .domain([0, 0.5, 1])
+            .range(["green", "beige", "orange"]);   //Default Sentiment Range [0: Negative, 0.5: Neutral, 1: Positive]
+    var sentiment_palette=["#dfc27d", "#e66101", "#fdb863", "#2c7bb6"];
+
+    function makeCloud(){
+        populateSentimentWords();
+        //D3 SETTINGS LOAD
+        //Capture all default data from the User's input
+        var color;
+        var cloudLayout;
+        var frequency_list;
+        var frq_font_scale;
+        var sentiment_flag;
+        var sel_font=document.getElementById(font_element);
+        var font_param=sel_font.options[sel_font.selectedIndex].value;
+        var div_list = d3.select("body").append("div").attr("class", "toolTip");
+        var div_cloud = d3.select("body").append("div").attr("class", "toolTip");
+
+
+        //------------------------------------------------------------------------------------------------------------//
+        //----------LIST SVG CODE-------------------------------------------------------------------------------------//
+        //------------------------------------------------------------------------------------------------------------//
+
+        var input_list=getTopNbySize(getFrequencyList(d3.select("#"+text_area_element).node().value,d3.select(sentiment_element).node().checked,d3.select(key_phrase_element).node().checked),12);
+
+        //Audit List Properties
+        console.log("==> List: LEN:"+input_list.length+"|WD:"+list_element_width+"|HT:"+list_element_height);
+
+        //Set size variables
+        var width = 300;
+        var height = viz_width;
+        var xLabelPadding=3;
+        var axisMargin = 0;
+        var margin = {top: (parseInt(d3.select('#'+list_element).style('height'), 10)/20), right: (parseInt(d3.select('#'+list_element).style('width'), 10)/20), bottom: (parseInt(d3.select('#'+list_element).style('height'), 10)/20), left: (parseInt(d3.select('#'+list_element).style('width'), 10)/5)};
+        var max_freq_list=d3.max(input_list, function(d) { return d.size; });
+
+        //Set up scales
+        var xScale = d3.scale.linear()
+                .range([0, width])
+                .clamp(true);
+
+        var yScale = d3.scale.ordinal()
+                .rangeRoundBands([0, height], 0.1);
+
+        var col = d3.scale.ordinal()
+                .range(colorbrewer.Blues[11]);
+
+        //Set up axes
+        var xAxis = d3.svg.axis()
+                .scale(xScale)
+                .tickSize(-height)
+                .orient("bottom");
+
+        var yAxis = d3.svg.axis()
+                .scale(yScale)
+                .innerTickSize(0)
+                .orient("right");
+
+        barHeight = height * 0.4/input_list.length;
+
+        //Render List Element
+        list_svg = d3.select("#"+list_element)
+                .append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        list_svg.append("g")
+                    .attr("class", "x axis")
+                    .attr("transform", "translate(0," + height + ")")
+                .call(xAxis);
+
+        function update(dataset) {
+
+            //Remove blanks
+            dataset.filter(function (dt) {
+                return (dt.text !== "");
+            });
+
+            //Recompute Scales
+            xScale.domain([0, max_freq_list]);
+            yScale.domain(dataset.map(function(d) { return d.text; }));
+            col.domain(dataset.map(function(d) { return d.size; }));
+
+
+            //Add the Axes
+            list_svg.append("g")
+                    .attr("class", "x axis")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(xAxis);
+
+            list_svg.select(".y.axis").remove();
+            list_svg.select(".x.axis").remove();
+
+
+            var bar = list_svg.selectAll(".bar")
+                    .data(dataset, function (d) {
+                        return d.text;
+                    });
+
+            //Bars
+            bar.enter().append("rect")
+                    .attr("class", "bar")
+                    .attr("x", 0)
+                    .attr("y", function (d, i) {
+                        return yScale(d.text);
+                    })
+                    .attr("width", function (d) {
+                        return xScale(d.size);
+                    })
+                    //.style("fill", function(d,i) { return col(d.size); })
+                    .attr("height", yScale.rangeBand());
+
+            bar
+                    .on("mousemove", function(d){
+                        div_list.style("left", d3.event.pageX-15+"px");
+                        div_list.style("top", d3.event.pageY-40+"px");
+                        div_list.style("display", "inline-block");
+                        div_list.html("Occurs <b>"+d.size+"</b> times");
+                    });
+            bar
+                    .on("mouseout", function(d){
+                        div_list.style("display", "none");
+                    });
+
+            bar.exit().remove();
+
+            bar.transition()
+                    .duration(750)
+                    .attr("x", function(d) { return 0; })
+                    .attr("y", function(d) { return yScale(d.text); })
+                    .attr("width", function(d) { return xScale(d.size); })
+                    .attr("height", yScale.rangeBand());
+            bar
+                    .append("text")
+                    .style("font-family", font_param)
+                    .style("font-size", function (d) {
+                        return yScale.rangeBand() / 2 + "px";
+                    })
+                    .attr("class", "label")
+                    .text(function (d) {
+                        return d.text;
+                    });
+
+            //Axis Labels
+            bar
+                    .append("text")
+                    .style("font-family", font_param)
+                    .style("font-size", function (d) {
+                        return yScale.rangeBand() / 2 + "px";
+                    })
+                    .attr("class", "label")
+                    .attr("x", xLabelPadding)
+                    .attr("y", function (d, i) {
+                        return yScale(d.text) + yScale.rangeBand() / 2;
+                    })
+                    .text(function (d) {
+                        return d.text;
+                    })
+                    .attr("fill", "red")
+                    .attr("dy", ".35em"); //vertical align middle
+
+
+            list_svg.append("g")
+                    .attr("class", "y axis")
+                    .call(yAxis);
+        }
+
+
+        //------------------------------------------------------------------------------------------------------------//
+        //---------CLOUD SVG CODE-------------------------------------------------------------------------------------//
+        //------------------------------------------------------------------------------------------------------------//
+
+        var cloud_svg=d3.select("#"+cloud_element)
+                .append("svg")
+                .attr("width", viz_height)
+                .attr("height", viz_width)
+                .append("g")
+                .attr("transform", "translate(" + viz_height / 2 + "," + viz_width / 2 + ")");
+
+
+        //Update Cloud
+        updateCloud();
+
+        //CLOUD UPDATE FUNCTION
+        function updateCloud(){
+
+            //Acquire updated data and reset Font, Font Size, Filters
+            var given_text=d3.select("#"+text_area_element).node().value;
+            var spiral_param=d3.select('input[name="spiral_opt"]:checked').node().value;
+            var keyphrase_flag=d3.select(key_phrase_element).node().checked;
+            var viz_element_width=document.getElementById(cloud_element).getBoundingClientRect().width;
+            var slider_param=d3.select("#"+slider_element).node().value;
+            var angle_param=d3.select("#"+angle_element).node().value;
+            cloud_rotation=angle_param;
+            font_param = sel_font.options[sel_font.selectedIndex].value;
+            sentiment_flag=d3.select(sentiment_element).node().checked;
+
+
+            //Grayscale Color Range (Test Alternate)
+            //color = d3.scale.linear()
+            //        .domain([0,1,2,3,4,5,6,10,15,20,100])
+            //        .range(["#ddd", "#ccc", "#bbb", "#aaa", "#999", "#888", "#777", "#666", "#555", "#444", "#333", "#222"]);
+            color=def_cloud_color;
+
+            //Recalculate Frequencies of updated data
+            frequency_list = getFrequencyList(given_text,sentiment_flag,keyphrase_flag);
+            var max_freq=d3.max(frequency_list, function(d) { return d.size; });
+            var median_freq=d3.median(frequency_list, function(d) { return d.size; });
+
+            //Reset Sentiment status of updated data and set color accordingly
+            if (sentiment_flag==true){
+                //Find max and median sentiments
+                var max_sent = d3.max(frequency_list, function (d) {
+                    return d.sentiment;
+                });
+                var median_sent = max_sent/2;
+
+                //Update sentiment
+                sentiment_scale = d3.scale.linear()
+                        .domain([-1, 0, median_sent, max_sent])
+                        .range(sentiment_palette);
+
+                //Audit Sentiment Properties
+                console.log("==>> Sentiment Scale Updated:"+median_sent+"|"+max_sent+"|"+sentiment_scale(-1)+"|"+sentiment_scale(0)+"|"+sentiment_scale(median_sent)+"|"+sentiment_scale(max_sent));
+            }
+
+            //Recalculate the frequency scale to apply to scaled Font Sizes
+             frq_font_scale = d3.scale.linear()
+                     .domain([0, max_freq])
+                     .rangeRound([10,100])
+                     .clamp(true);
+
+            //Get the % of Top words user wants to see
+            var noOfWords=Math.floor((slider_param/100)*frequency_list.length);
+            //Filter the Top X% of the words as per user input
+            var frequency_list=getTopNbySize(frequency_list,noOfWords);
+            var count_display=0;
+            if(noOfWords==0)
+                count_display=noOfWords;
+            else
+                count_display=noOfWords-1;
+
+            //Show slider value and the number of words rendered to user
+            d3.select("output#"+slider_element)
+                    .text(noOfWords+" word(s) displayed (Showing the Top "+d3.format(".f")(slider_param)+"% of the words)");
+
+
+            //Capture and format the updated data to be plotted
+            //console.log(frequency_list);        //Debug ONLY
+            var cloud_text=JSON.parse(JSON.stringify(frequency_list));
+
+            //Update the Top 10 List
+            update(getTopNbySize(frequency_list,10));
+
+            //Update the Cloud
+            cloudLayout = d3.layout.cloud()
+                    .size([viz_height, viz_width])
+                    .timeInterval(20)
+                    .words(cloud_text)
+                    .spiral(spiral_param)
+                    .padding(cloud_padding)
+                    .rotate(cloud_rotation)
+                    .fontSize(function(d,i) { return frq_font_scale(d.size); })
+                    .on("end", draw)
+                    .start();
+
+            //Audit Cloud Parameters
+            console.log("==> Cloud: LEN:"+cloud_text.length+"|H:"+viz_height+"|W:"+viz_width+"|SEN:"+sentiment_flag+"|KEY:"+keyphrase_flag+"|FON:"+font_param+"|ROT:"+cloud_rotation+"|PAD:"+cloud_padding+"|SPL:"+spiral_param);
+
+        }
+
+        //CLOUD DRAW FUNCTION
+        function draw(words) {
+
+            var cloud =cloud_svg.selectAll("g text")
+                    .data(words, function(d) { return d.text; });
+
+            //Entering words
+            cloud
+                    .enter().append("text")
+                    .style("font-family", font_param)
+                    .style("font-size", 1)
+                    .attr("text-anchor", "middle")
+                    .text(function(d) { return d.text; })
+                    .style("fill-opacity", 0.20);
+
+            //Animate word creation
+            cloud
+                    .transition()
+                    .duration(400)
+                    .style("font-family", font_param)
+                    .style("font-size", function(d) { return d.size + "px"; })
+                    .style("fill", function(d, i) {
+                        var opt;
+                        if (sentiment_flag==true)
+                            opt= sentiment_scale(d.sentiment);
+                        else
+                            opt= color(i);
+                        return opt;
+                    })
+                    .attr("transform", function (d) {
+                        return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+                    })
+                    .style("fill-opacity", 1);
+
+            cloud
+                    .on("mousemove", function(d){
+                        div_cloud.transition()
+                                .duration(300)
+                                .style("opacity", .95);
+                        div_cloud.style("left", (d3.event.pageX - 50)+"px")
+                                .style("top", (d3.event.pageY - 28)+"px")
+                                .style("display", "inline-block");
+                        if(sentiment_flag==true)
+                            div_cloud.html("Word: <b>"+d.text+"</b><br>Frequency: <b>"+Math.round(frq_font_scale.invert(d.size))+"" +
+                                    "</b> time(s)"+"<br>Sentiment: <b>"+expressSentiment(d.sentiment)+"</b>");
+                        else
+                            div_cloud.html("Word: <b>"+d.text+"</b><br>Frequency: <b>"+Math.round(frq_font_scale.invert(d.size))+"" +
+                                    "</b> time(s)");
+                    });
+            cloud
+                    .on("mouseout", function(d){
+                        div_cloud.transition()
+                                .duration(300)
+                                .style("opacity", .10)
+                                .style("display", "none");
+                    });
+
+
+            //Exiting words
+            cloud
+                    .exit()
+                    .transition()
+                    .duration(200)
+                    .style('fill-opacity', 0.20)
+                    .attr('font-size', "1px")
+                    .remove();
+
+            cloudLayout.stop();
+
+        }
+
+
+        //------------------------------------------------------------------------------------------------------------//
+        //-------USER INTERACTION-------------------------------------------------------------------------------------//
+        //------------------------------------------------------------------------------------------------------------//
+        var div_tip=d3.select("body")
+                .append("div")
+                    .attr("class", "toolTip")
+                    .style("opacity",0.80);
+
+        d3.select(go_button_element)
+                .on("click", function(d) {
+                    updateCloud();
+                });
+
+
+        d3.select(reset_button_element)
+                .on("click", function(d) {
+                    document.getElementById(text_area_element).value=sample_text;
+                    updateCloud();
+                });
+
+        d3.select("#archimedean")
+                .on("change", function(d){
+                    updateCloud();
+                })
+                .on("mousemove", function(d){
+                    div_tip.style("left", d3.event.pageX-20+"px");
+                    div_tip.style("top", d3.event.pageY-85+"px");
+                    div_tip.style("display", "inline-block");
+                    div_tip.html("Selecting this option will mathematically show the words in the cloud in an archimedean spiral formation." +
+                            "<br>This may give some layout clarity when rendering large number of words.");
+                })
+                .on("mouseout", function(d){
+                    div_tip.style("display", "none");
+                });
+
+        d3.select("#rectangular")
+                .on("change", function(d){
+                    updateCloud();
+                })
+                .on("mousemove", function(d){
+                    div_tip.style("left", d3.event.pageX-20+"px");
+                    div_tip.style("top", d3.event.pageY-85+"px");
+                    div_tip.style("display", "inline-block");
+                    div_tip.html("Selecting this option will mathematically show the words in the cloud in a rectangular spiral formation." +
+                            "<br>This may give some layout clarity when rendering small number of words.");                })
+                .on("mouseout", function(d){
+                    div_tip.style("display", "none");
+                });
+
+        d3.select(sentiment_element)
+                .on("change", function(d){
+                    updateCloud();
+                })
+                .on("mousemove", function(d){
+                    div_tip.style("left", d3.event.pageX-65+"px");
+                    div_tip.style("top", d3.event.pageY-10+"px");
+                    div_tip.style("display", "inline-block");
+                    div_tip.style("opacity", 0.90);
+                    div_tip.html("Checking this option will color the words as per the perceived sentiment after lexical analysis. " +
+                            "While this may not be indicative of the actual sentiment of the word in all cases, it gives a fair idea about the general perceived sentiment associated with the word in literature.");
+                })
+                .on("mouseout", function(d){
+                    div_tip.style("display", "none");
+                });
+
+        d3.select("#"+angle_element)
+                .on("change", function(d){
+                    updateCloud();
+                });
+
+        d3.select(key_phrase_element)
+                .on("change", function(d){
+                    updateCloud();
+                })
+                .on("mousemove", function(d){
+                    div_tip.style("left", d3.event.pageX-65+"px");
+                    div_tip.style("top", d3.event.pageY-10+"px");
+                    div_tip.style("display", "inline-block");
+                    div_tip.style("opacity", 0.90);
+                    div_tip.html("Checking this option will filter commonly used stop words like 'the','them','I','he','she' etc. and other" +
+                            "words which do not represent an entity or object. <br>This can be used to filter unnecessary words to remove clutter from large corpus of words.");
+                })
+                .on("mouseout", function(d){
+                    div_tip.style("display", "none");
+                });
+
+        d3.select("#"+font_element)
+                .on("change", function(d){
+                    updateCloud();
+                })
+                .on("mousemove", function(d){
+                    div_tip.style("left", d3.event.pageX-15+"px");
+                    div_tip.style("top", d3.event.pageY-20+"px");
+                    div_tip.style("display", "inline-block");
+                    div_tip.html("Use this option to change the font");
+                })
+                .on("mouseout", function(d){
+                    div_tip.style("display", "none");
+                });
+
+        d3.select("#font_reset")
+                .on("click", function(d){
+                    d3.select("#"+font_element).property( "value", "Impact" );
+                    updateCloud();
+                });
+
+        d3.select("input[type=range]#"+slider_element)
+                .on("input", function(d){
+                    val = this.value;
+                    d3.select("output#"+slider_element)
+                            .text(d3.format(".f"+"%")(val));
+                    updateCloud();
+                })
+                .on("mousemove", function(d){
+                    div_tip.style("left", d3.event.pageX-70+"px");
+                    div_tip.style("top", d3.event.pageY+"px");
+                    div_tip.style("display", "inline-block");
+                    div_tip.style("opacity", 0.97);
+                    div_tip.html("Move the slider to the <b>left</b> to remove the less frequent words from the word-cloud" +
+                            "<br>or to the <b>right</b> to include all words in the word-cloud");
+                })
+                .on("mouseout", function(d){
+                    div_tip.style("display", "none");
+                });
+    }
+
+    //Initialize the Word Cloud
+    makeCloud();
+
+</script>
+
+
+</body>
+</html>
