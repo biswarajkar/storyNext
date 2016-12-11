@@ -57,7 +57,7 @@
     </style>
 
     <!--  JS Imports -->
-    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
     <script src="lib/d3.layout.cloud.js"></script>
     <script src="lib/colorbrewer.js"></script>
     <script src="js/helperFunctions.js"></script>
@@ -264,6 +264,9 @@
             dataset.filter(function (dt) {
                 return (dt.text !== "");
             });
+
+            //Update Max Freq
+            max_freq_list=d3.max(dataset, function(d) { return d.size; });
 
             //Recompute Scales
             xScale.domain([0, max_freq_list]);

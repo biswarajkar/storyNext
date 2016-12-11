@@ -459,6 +459,10 @@ dominates
 dote
 dotingly
 doubtless
+dream
+dreamed
+dreamer
+dreaming
 dreamland
 dumbfounded
 dumbfounding
